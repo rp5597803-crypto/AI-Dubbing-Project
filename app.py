@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 
+from backend.replace_audio import process_video
+
 UPLOAD_FOLDER = "uploads"
 OUTPUT_FOLDER = "output"
 
@@ -11,54 +13,65 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 app = Flask(__name__)
 CORS(app)
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["OUTPUT_FOLDER"] = OUTPUT_FOLDER
-
 
 @app.route("/")
 def home():
     return jsonify({
-        "project": "AI Video Dubbing",
+        "project": "AI Video Dubbing Studio",
         "status": "Running"
     })
 
 
 @app.route("/upload", methods=["POST"])
-def upload_video():
+def upload():
 
     if "video" not in request.files:
-        return jsonify({"error": "No video selected"}), 400
+        return jsonify({
+            "success": False,
+            "message": "No video selected."
+        })
 
-    file = request.files["video"]
+    video = request.files["video"]
 
-    if file.filename == "":
-        return jsonify({"error": "Empty filename"}), 400
-
-    save_path = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        file.filename
+    language = request.form.get(
+        "language",
+        "en"
     )
 
-    file.save(save_path)
+    video_path = os.path.join(
+        UPLOAD_FOLDER,
+        video.filename
+    )
+
+    video.save(video_path)
+
+    result = process_video(
+        video_path,
+        target_language=language
+    )
 
     return jsonify({
         "success": True,
-        "filename": file.filename,
-        "path": save_path
+        "filename": video.filename,
+        "translated_text": result["translated_text"],
+        "download":
+            "/download/final_video.mp4"
     })
 
 
-@app.route("/output/<filename>")
+@app.route("/download/<filename>")
 def download(filename):
+
     return send_from_directory(
-        app.config["OUTPUT_FOLDER"],
-        filename
+        OUTPUT_FOLDER,
+        filename,
+        as_attachment=True
     )
 
 
 if __name__ == "__main__":
     app.run(
+        debug=True,
         host="0.0.0.0",
-        port=5000,
-        debug=True
+        port=5000
     )

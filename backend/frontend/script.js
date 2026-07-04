@@ -11,11 +11,12 @@ uploadBtn.addEventListener("click", async () => {
         return;
     }
 
-    statusBox.innerHTML = "Uploading video...";
-
     const formData = new FormData();
     formData.append("video", videoFile.files[0]);
     formData.append("language", language.value);
+
+    statusBox.innerHTML = "⏳ Uploading video...";
+    resultBox.innerHTML = "";
 
     try {
 
@@ -32,17 +33,34 @@ uploadBtn.addEventListener("click", async () => {
         if (data.success) {
 
             statusBox.innerHTML =
-                "✅ Video uploaded successfully.";
+                "✅ AI dubbing completed successfully.";
 
             resultBox.innerHTML = `
+                <h3>Completed</h3>
+
                 <p><b>File:</b> ${data.filename}</p>
-                <p>AI dubbing pipeline will run in the next version.</p>
+
+                <p><b>Translated Text:</b></p>
+
+                <textarea
+                    rows="8"
+                    style="width:100%;margin-top:10px;"
+                    readonly>${data.translated_text}</textarea>
+
+                <br><br>
+
+                <a
+                    class="download-btn"
+                    href="http://localhost:5000${data.download}"
+                    target="_blank">
+                    Download Dubbed Video
+                </a>
             `;
 
         } else {
 
             statusBox.innerHTML =
-                "❌ Upload failed.";
+                "❌ Processing failed.";
 
         }
 
